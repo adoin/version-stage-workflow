@@ -19,7 +19,7 @@ function parseArgs() {
   return args;
 }
 
-function copyDirectory(src, dest) {
+function copyDirectory(src, dest, excludeDirs = []) {
   if (!fs.existsSync(src)) {
     console.error(`❌ 源目录不存在: ${src}`);
     process.exit(1);
@@ -31,12 +31,18 @@ function copyDirectory(src, dest) {
   // 递归复制文件
   const items = fs.readdirSync(src);
   items.forEach(item => {
+    // 跳过排除的目录
+    if (excludeDirs.includes(item)) {
+      console.log(`⏭️  跳过排除目录: ${item}`);
+      return;
+    }
+
     const srcPath = path.join(src, item);
     const destPath = path.join(dest, item);
     const stat = fs.statSync(srcPath);
 
     if (stat.isDirectory()) {
-      copyDirectory(srcPath, destPath);
+      copyDirectory(srcPath, destPath, excludeDirs);
     } else {
       fs.copyFileSync(srcPath, destPath);
     }
@@ -79,7 +85,19 @@ function archiveVersion(options) {
 
   // 复制构建产物到版本目录
   console.log(`📋 复制构建产物到: ${versionDir}`);
-  copyDirectory(buildDir, versionDir);
+  
+  // 排除可能导致递归复制的目录
+  const excludeDirs = [
+    'archive',           // 归档目录本身
+    'node_modules',      // Node.js 依赖
+    '.git',              // Git 目录
+    '.github',           // GitHub Actions 目录
+    '.version-archive-tools', // 本工具目录
+    'dist',              // 如果构建目录就是 dist，避免嵌套
+    'build'              // 常见的构建目录名
+  ];
+  
+  copyDirectory(buildDir, versionDir, excludeDirs);
 
   // 创建版本元数据
   const metadata = {

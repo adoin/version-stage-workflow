@@ -70,22 +70,33 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: build-artifacts
-        path: .
+        path: ./downloaded-artifacts
       continue-on-error: true
 
     - name: 验证构建产物目录
       run: |
-        echo "🔍 检查当前目录内容："
-        ls -la
-        if [ -d "${{ inputs.build_dir }}" ]; then
-          echo "✅ 构建产物目录存在: ${{ inputs.build_dir }}"
+        echo "🔍 检查下载的构建产物："
+        ls -la ./downloaded-artifacts/
+        
+        # 检查原始构建目录路径
+        BUILD_PATH="./downloaded-artifacts/${{ inputs.build_dir }}"
+        
+        # 如果build_dir是"."，则直接使用downloaded-artifacts
+        if [ "${{ inputs.build_dir }}" = "." ]; then
+          BUILD_PATH="./downloaded-artifacts"
+        fi
+        
+        echo "🎯 目标构建路径: $BUILD_PATH"
+        
+        if [ -d "$BUILD_PATH" ]; then
+          echo "✅ 构建产物目录存在: $BUILD_PATH"
           echo "📁 目录内容："
-          ls -la "${{ inputs.build_dir }}"
+          ls -la "$BUILD_PATH"
         else
-          echo "❌ 构建产物目录不存在: ${{ inputs.build_dir }}"
-          echo "💡 提示：请确保在build job中上传了artifact"
-          echo "📋 当前目录结构："
-          find . -type d -name "dist" -o -name ".vitepress" 2>/dev/null || true
+          echo "❌ 构建产物目录不存在: $BUILD_PATH"
+          echo "💡 提示：请确保在build job中上传了正确的artifact"
+          echo "📋 下载的artifact结构："
+          find ./downloaded-artifacts -type d 2>/dev/null || true
           exit 1
         fi
 
@@ -163,11 +174,20 @@ jobs:
         echo "归档目录: archive/${{ inputs.archive_dir }}"
         echo "强制归档: ${{ inputs.force_archive }}"
         
+        # 确定正确的构建目录路径
+        if [ "${{ inputs.build_dir }}" = "." ]; then
+          BUILD_PATH="../downloaded-artifacts"
+        else
+          BUILD_PATH="../downloaded-artifacts/${{ inputs.build_dir }}"
+        fi
+        
+        echo "🎯 实际构建路径: $BUILD_PATH"
+        
         cd .version-archive-tools
         node scripts/archive-version.js \
           --version="${{ steps.get_version.outputs.version }}" \
           --clean-version="${{ steps.get_version.outputs.clean_version }}" \
-          --build-dir="../${{ inputs.build_dir }}" \
+          --build-dir="$BUILD_PATH" \
           --archive-dir="../archive/${{ inputs.archive_dir }}" \
           --force="${{ inputs.force_archive }}"
 
