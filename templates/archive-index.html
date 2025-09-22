@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>版本归档</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗂️</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+        
+        .search-box {
+            max-width: 500px;
+            margin: 0 auto 40px;
+            position: relative;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        .search-input:focus {
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            transform: translateY(-2px);
+        }
+        
+        .version-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        .version-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .version-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+        
+        .version-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        .version-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .version-date {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .version-date::before {
+            content: '📅';
+            font-size: 0.8em;
+        }
+        
+        .version-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .version-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+        
+        .version-link::after {
+            content: '→';
+            transition: transform 0.3s ease;
+        }
+        
+        .version-link:hover::after {
+            transform: translateX(3px);
+        }
+        
+        .current-badge {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 10px rgba(39, 174, 96, 0.3);
+        }
+        
+        .loading, .empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+            font-size: 1.1em;
+        }
+        
+        .loading::before {
+            content: '⏳';
+            display: block;
+            font-size: 3em;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        
+        .empty::before {
+            content: '📦';
+            display: block;
+            font-size: 3em;
+            margin-bottom: 20px;
+            opacity: 0.7;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .version-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-item {
+            background: rgba(255,255,255,0.1);
+            padding: 15px 25px;
+            border-radius: 15px;
+            color: white;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: 700;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗂️ 版本归档</h1>
+            <p>浏览项目的所有历史版本</p>
+        </div>
+        
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-item">
+                <span class="stat-number" id="total-versions">0</span>
+                <span class="stat-label">总版本数</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="latest-version">-</span>
+                <span class="stat-label">最新版本</span>
+            </div>
+        </div>
+        
+        <div class="search-box">
+            <input type="text" class="search-input" placeholder="🔍 搜索版本..." id="search-input">
+        </div>
+        
+        <div id="version-list">
+            <div class="loading">正在加载版本列表...</div>
+        </div>
+    </div>
+
+    <script>
+        let allVersions = [];
+        
+        // 加载版本列表
+        fetch('{{ARCHIVE_DIR}}/index.json')
+            .then(response => response.json())
+            .then(data => {
+                allVersions = data.versions || [];
+                updateStats();
+                renderVersions(allVersions);
+                setupSearch();
+            })
+            .catch(error => {
+                console.error('加载版本列表失败:', error);
+                document.getElementById('version-list').innerHTML = 
+                    '<div class="empty">加载版本列表失败，请检查控制台</div>';
+            });
+        
+        function updateStats() {
+            const statsEl = document.getElementById('stats');
+            const totalEl = document.getElementById('total-versions');
+            const latestEl = document.getElementById('latest-version');
+            
+            if (allVersions.length > 0) {
+                totalEl.textContent = allVersions.length;
+                latestEl.textContent = allVersions[0].version;
+                statsEl.style.display = 'flex';
+            }
+        }
+        
+        function renderVersions(versions) {
+            const container = document.getElementById('version-list');
+            
+            if (!versions || versions.length === 0) {
+                container.innerHTML = '<div class="empty">暂无版本</div>';
+                return;
+            }
+
+            const grid = document.createElement('div');
+            grid.className = 'version-grid';
+
+            versions.forEach((version, index) => {
+                const card = document.createElement('div');
+                card.className = 'version-card';
+                
+                const isLatest = index === 0;
+                const badge = isLatest ? '<span class="current-badge">最新</span>' : '';
+                const date = new Date(version.timestamp);
+                const formattedDate = date.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                card.innerHTML = `
+                    <div class="version-title">
+                        <span>版本 ${version.version}</span>
+                        ${badge}
+                    </div>
+                    <div class="version-date">
+                        ${formattedDate}
+                    </div>
+                    <a href="${version.path}/" class="version-link">查看此版本</a>
+                `;
+                
+                grid.appendChild(card);
+            });
+
+            container.innerHTML = '';
+            container.appendChild(grid);
+        }
+        
+        function setupSearch() {
+            const searchInput = document.getElementById('search-input');
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                const filtered = allVersions.filter(version => 
+                    version.version.toLowerCase().includes(query) ||
+                    version.timestamp.toLowerCase().includes(query)
+                );
+                renderVersions(filtered);
+            });
+        }
+    </script>
+</body>
+</html>

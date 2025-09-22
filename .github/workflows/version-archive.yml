@@ -241,9 +241,19 @@ jobs:
           echo "✅ 版本 ${{ steps.get_version.outputs.version }} 归档完成"
         fi
 
+    - name: 复制归档主页模板
+      run: |
+        # 复制预制的归档主页文件
+        cp .version-archive-tools/templates/archive-index.html archive/index.html
+        
+        # 替换模板中的变量
+        sed -i "s|{{ARCHIVE_DIR}}|${{ inputs.archive_dir }}|g" archive/index.html
+        
+        echo "✅ 复制了归档主页模板"
+
     - name: 上传归档产物到 Pages
       if: ${{ inputs.enable_pages }}
-      uses: actions/upload-pages-artifact@v3
+      uses: actions/upload-pages-artifact@v4
       with:
         path: archive
 
