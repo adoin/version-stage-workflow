@@ -212,11 +212,14 @@ jobs:
         # 确保归档目录存在
         mkdir -p archive/${{ inputs.archive_dir }}
         
-        # 复制版本切换器文件到归档目录
+        # 复制版本切换器文件到归档根目录（主页面需要）
+        cp .version-archive-tools/src/version-switcher-iframe.js archive/
+        
+        # 也复制到版本目录（兼容性）
         cp .version-archive-tools/src/version-switcher.js archive/${{ inputs.archive_dir }}/
         cp .version-archive-tools/src/version-switcher.css archive/${{ inputs.archive_dir }}/
         
-        echo "✅ 版本切换器资源已复制到 archive/${{ inputs.archive_dir }}/"
+        echo "✅ 版本切换器资源已复制到归档目录"
 
     - name: 执行版本归档
       run: |
