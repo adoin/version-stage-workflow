@@ -1,0 +1,81 @@
+# 示例：调用版本归档工作流的项目工作流
+# 将此文件复制到您项目的 .github/workflows/ 目录中
+
+name: Build and Archive
+
+on:
+  push:
+    tags:
+      - 'v*'  # 当推送版本标签时触发
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '手动指定版本号'
+        required: false
+        default: ''
+
+jobs:
+  # 第一步：构建项目
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout 代码
+      uses: actions/checkout@v4
+
+    - name: 设置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'  # 或 'yarn', 'pnpm'
+
+    - name: 安装依赖
+      run: npm ci  # 或 yarn install --frozen-lockfile, pnpm install --frozen-lockfile
+
+    - name: 运行测试
+      run: npm test  # 可选
+
+    - name: 构建项目
+      run: npm run build
+
+    # 上传构建产物供后续 job 使用
+    - name: 上传构建产物
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: dist/  # 您的构建输出目录
+        retention-days: 1
+
+  # 第二步：调用版本归档工作流
+  archive:
+    needs: build
+    uses: your-username/version-stage-workflow/.github/workflows/version-archive.yml@main
+    with:
+      version: ${{ inputs.version }}  # 可选，不传则自动从标签或package.json获取
+      build_dir: 'dist'              # 构建产物目录
+      archive_branch: 'gh-pages'     # 归档分支（可选）
+      archive_dir: 'versions'        # 归档目录（可选）
+      force_archive: false           # 是否强制覆盖（可选）
+      enable_pages: true             # 是否部署到GitHub Pages（可选）
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 如果需要下载构建产物
+  download-and-archive:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout 代码
+      uses: actions/checkout@v4
+
+    - name: 下载构建产物
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts
+        path: dist/
+
+    # 然后调用版本归档工作流
+    - name: 调用版本归档
+      uses: your-username/version-stage-workflow/.github/workflows/version-archive.yml@main
+      with:
+        build_dir: 'dist'
+        # 其他参数...

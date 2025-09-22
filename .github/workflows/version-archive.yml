@@ -1,0 +1,168 @@
+name: Version Archive Action
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: '版本号（如 v1.0.0）'
+        required: false
+        type: string
+      build_dir:
+        description: '构建产物目录（相对路径）'
+        required: true
+        type: string
+        default: 'dist'
+      archive_branch:
+        description: '归档分支名称'
+        required: false
+        type: string
+        default: 'gh-pages'
+      archive_dir:
+        description: '归档目录名称'
+        required: false
+        type: string
+        default: 'versions'
+      force_archive:
+        description: '强制归档（覆盖已存在版本）'
+        required: false
+        type: boolean
+        default: false
+      enable_pages:
+        description: '是否部署到 GitHub Pages'
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+
+jobs:
+  archive-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
+    steps:
+    - name: Checkout 调用方仓库
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Checkout 版本归档工具
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ github.repository_owner }}/version-stage-workflow
+        path: .version-archive-tools
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 设置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: 安装版本归档工具依赖
+      run: |
+        cd .version-archive-tools
+        npm install --production
+
+    - name: 验证构建产物目录
+      run: |
+        if [ ! -d "${{ inputs.build_dir }}" ]; then
+          echo "❌ 构建产物目录不存在: ${{ inputs.build_dir }}"
+          echo "请确保在调用此工作流前已完成项目构建"
+          exit 1
+        fi
+        echo "✅ 构建产物目录存在: ${{ inputs.build_dir }}"
+
+    - name: 获取版本号
+      id: get_version
+      run: |
+        if [ -n "${{ inputs.version }}" ]; then
+          VERSION="${{ inputs.version }}"
+        elif [ "${{ github.ref_type }}" == "tag" ]; then
+          VERSION="${{ github.ref_name }}"
+        else
+          # 从 package.json 获取版本号（如果存在）
+          if [ -f "package.json" ]; then
+            VERSION="v$(node -p "require('./package.json').version" 2>/dev/null || echo "1.0.0")"
+          else
+            VERSION="v1.0.0"
+          fi
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "clean_version=${VERSION#v}" >> $GITHUB_OUTPUT
+        echo "🏷️ 使用版本号: $VERSION"
+
+    - name: 检出归档分支
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.archive_branch }}
+        path: archive
+        token: ${{ secrets.GITHUB_TOKEN }}
+      continue-on-error: true
+
+    - name: 创建归档分支（如果不存在）
+      run: |
+        if [ ! -d "archive" ]; then
+          echo "📝 创建新的归档分支: ${{ inputs.archive_branch }}"
+          git checkout --orphan ${{ inputs.archive_branch }}
+          git rm -rf . 2>/dev/null || true
+          echo "# 版本归档" > README.md
+          mkdir -p ${{ inputs.archive_dir }}
+          git add .
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "Initialize archive branch"
+          git push origin ${{ inputs.archive_branch }}
+          
+          # 重新检出归档分支
+          git checkout main 2>/dev/null || git checkout master 2>/dev/null || true
+          git worktree add archive ${{ inputs.archive_branch }}
+        fi
+
+    - name: 复制版本切换器资源
+      run: |
+        # 复制版本切换器文件到归档目录
+        cp .version-archive-tools/src/version-switcher.js archive/${{ inputs.archive_dir }}/
+        cp .version-archive-tools/src/version-switcher.css archive/${{ inputs.archive_dir }}/
+
+    - name: 执行版本归档
+      run: |
+        cd .version-archive-tools
+        node scripts/archive-version.js \
+          --version="${{ steps.get_version.outputs.version }}" \
+          --clean-version="${{ steps.get_version.outputs.clean_version }}" \
+          --build-dir="../${{ inputs.build_dir }}" \
+          --archive-dir="../archive/${{ inputs.archive_dir }}" \
+          --force="${{ inputs.force_archive }}"
+
+    - name: 更新版本索引
+      run: |
+        cd .version-archive-tools
+        node scripts/update-version-index.js \
+          --archive-dir="../archive/${{ inputs.archive_dir }}" \
+          --version="${{ steps.get_version.outputs.version }}"
+
+    - name: 提交归档更改
+      run: |
+        cd archive
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        if git diff --staged --quiet; then
+          echo "📝 没有更改需要提交"
+        else
+          git commit -m "Archive version ${{ steps.get_version.outputs.version }}"
+          git push origin ${{ inputs.archive_branch }}
+          echo "✅ 版本 ${{ steps.get_version.outputs.version }} 归档完成"
+        fi
+
+    - name: 部署到 GitHub Pages
+      if: ${{ inputs.enable_pages }}
+      uses: actions/deploy-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: archive

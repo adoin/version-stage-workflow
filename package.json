@@ -1,0 +1,21 @@
+{
+  "name": "version-stage-workflow",
+  "version": "1.0.0",
+  "description": "GitHub workflow for version-based artifact archiving and version switching UI",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test/test-runner.js",
+    "build": "node scripts/build.js",
+    "dev": "node scripts/dev-server.js"
+  },
+  "keywords": ["github-actions", "version-control", "workflow", "ui-component"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "dependencies": {
+    "semver": "^7.5.4",
+    "fuse.js": "^7.0.0"
+  }
+}

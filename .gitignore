@@ -1,0 +1,4 @@
+.cursor/
+.vscode/
+.idea/
+node_modules

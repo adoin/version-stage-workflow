@@ -1,0 +1,271 @@
+/**
+ * 版本切换器样式
+ * 左上角悬浮控制器样式定义
+ */
+
+.version-switcher {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 10000;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* 触发按钮 */
+.version-trigger {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-width: 120px;
+}
+
+.version-trigger:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: #0366d6;
+  box-shadow: 0 4px 12px rgba(3, 102, 214, 0.15);
+}
+
+.version-trigger.active {
+  background: #0366d6;
+  color: white;
+  border-color: #0366d6;
+}
+
+.version-trigger.active .version-arrow {
+  transform: rotate(180deg);
+}
+
+.version-icon {
+  margin-right: 6px;
+  font-size: 16px;
+}
+
+.version-text {
+  flex: 1;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.version-arrow {
+  margin-left: 6px;
+  transition: transform 0.2s ease;
+  font-size: 12px;
+}
+
+/* 下拉面板 */
+.version-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
+  max-height: 320px;
+  min-width: 280px;
+  overflow: hidden;
+}
+
+/* 搜索框 */
+.version-search {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  outline: none;
+  font-size: 14px;
+  background: rgba(248, 249, 250, 0.8);
+}
+
+.version-search:focus {
+  background: white;
+  border-bottom-color: #0366d6;
+}
+
+.version-search::placeholder {
+  color: #6a737d;
+}
+
+/* 版本列表 */
+.version-list {
+  max-height: 240px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.version-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.version-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.version-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.version-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* 版本项 */
+.version-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: background-color 0.2s ease;
+}
+
+.version-item:last-child {
+  border-bottom: none;
+}
+
+.version-item:hover {
+  background: rgba(3, 102, 214, 0.05);
+}
+
+.version-item.current {
+  background: rgba(40, 167, 69, 0.1);
+  border-left: 3px solid #28a745;
+}
+
+.version-item.current .version-name::after {
+  content: " (当前)";
+  color: #28a745;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.version-item.no-results {
+  color: #6a737d;
+  cursor: default;
+  text-align: center;
+  font-style: italic;
+}
+
+.version-item.no-results:hover {
+  background: transparent;
+}
+
+.version-name {
+  font-weight: 500;
+  color: #24292e;
+  margin-bottom: 2px;
+}
+
+.version-date {
+  font-size: 12px;
+  color: #6a737d;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .version-switcher {
+    top: 10px;
+    left: 10px;
+  }
+  
+  .version-trigger {
+    padding: 6px 10px;
+    min-width: 100px;
+    font-size: 13px;
+  }
+  
+  .version-dropdown {
+    min-width: 240px;
+    max-height: 280px;
+  }
+  
+  .version-list {
+    max-height: 200px;
+  }
+  
+  .version-item {
+    padding: 10px 12px;
+  }
+}
+
+/* 暗色主题支持 */
+@media (prefers-color-scheme: dark) {
+  .version-trigger {
+    background: rgba(33, 38, 45, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #f6f8fa;
+  }
+  
+  .version-trigger:hover {
+    background: rgba(33, 38, 45, 1);
+    border-color: #58a6ff;
+  }
+  
+  .version-trigger.active {
+    background: #58a6ff;
+    border-color: #58a6ff;
+  }
+  
+  .version-dropdown {
+    background: #21262d;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .version-search {
+    background: rgba(13, 17, 23, 0.8);
+    color: #f6f8fa;
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .version-search:focus {
+    background: #21262d;
+    border-bottom-color: #58a6ff;
+  }
+  
+  .version-search::placeholder {
+    color: #8b949e;
+  }
+  
+  .version-item {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .version-item:hover {
+    background: rgba(88, 166, 255, 0.1);
+  }
+  
+  .version-item.current {
+    background: rgba(56, 139, 253, 0.15);
+    border-left-color: #58a6ff;
+  }
+  
+  .version-item.current .version-name::after {
+    color: #58a6ff;
+  }
+  
+  .version-name {
+    color: #f6f8fa;
+  }
+  
+  .version-date {
+    color: #8b949e;
+  }
+  
+  .version-item.no-results {
+    color: #8b949e;
+  }
+}
