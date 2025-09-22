@@ -5,14 +5,8 @@ name: Build and Archive
 
 on:
   push:
-    tags:
-      - 'v*'  # 当推送版本标签时触发
-  workflow_dispatch:
-    inputs:
-      version:
-        description: '手动指定版本号'
-        required: false
-        default: ''
+    branches: [ main, master ]  # 推送到主分支时触发
+  workflow_dispatch:  # 支持手动触发
 
 jobs:
   # 第一步：构建项目
@@ -50,7 +44,6 @@ jobs:
     needs: build
     uses: your-username/version-stage-workflow/.github/workflows/version-archive.yml@main
     with:
-      version: ${{ inputs.version }}  # 可选，不传则自动从标签或package.json获取
       build_dir: 'dist'              # 构建产物目录
       archive_branch: 'gh-pages'     # 归档分支（可选）
       archive_dir: 'versions'        # 归档目录（可选）

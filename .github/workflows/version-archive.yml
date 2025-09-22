@@ -3,10 +3,6 @@ name: Version Archive Action
 on:
   workflow_call:
     inputs:
-      version:
-        description: '版本号（如 v1.0.0）'
-        required: false
-        type: string
       build_dir:
         description: '构建产物目录（相对路径）'
         required: true
@@ -37,9 +33,6 @@ on:
 jobs:
   archive-version:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     permissions:
       contents: write
       pages: write

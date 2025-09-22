@@ -24,7 +24,21 @@
 
 ## 快速开始
 
-### 1. 在您的项目中引用
+### 1. 确保项目有 package.json
+
+版本号将自动从 `package.json` 的 `version` 字段获取：
+
+```json
+{
+  "name": "your-project",
+  "version": "1.2.35",
+  "scripts": {
+    "build": "your-build-command"
+  }
+}
+```
+
+### 2. 在您的项目中引用
 
 ```yaml
 # .github/workflows/deploy.yml
@@ -32,7 +46,8 @@ name: Build and Archive
 
 on:
   push:
-    tags: ['v*']
+    branches: [ main ]  # 推送到主分支时触发
+  workflow_dispatch:   # 支持手动触发
 
 jobs:
   build:
@@ -48,6 +63,12 @@ jobs:
     # 您的构建过程
     - run: pnpm install
     - run: pnpm build
+    
+    # 上传构建产物
+    - uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: dist/  # 您的构建输出目录
 
   # 调用版本归档工作流
   archive:
@@ -55,11 +76,9 @@ jobs:
     uses: your-username/version-stage-workflow/.github/workflows/version-archive.yml@main
     with:
       build_dir: 'dist'  # 您的构建输出目录
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-### 2. 本地开发测试
+### 3. 本地开发测试
 
 ```bash
 # 克隆项目
