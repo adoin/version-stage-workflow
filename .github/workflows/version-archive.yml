@@ -119,35 +119,61 @@ jobs:
         echo "clean_version=${VERSION#v}" >> $GITHUB_OUTPUT
         echo "🏷️ 使用版本号: $VERSION"
 
-    - name: 检出归档分支
+    - name: 检查归档分支是否存在
+      id: check_branch
+      run: |
+        # 检查远程分支是否存在
+        if git ls-remote --heads origin ${{ inputs.archive_branch }} | grep -q ${{ inputs.archive_branch }}; then
+          echo "branch_exists=true" >> $GITHUB_OUTPUT
+          echo "✅ 归档分支 ${{ inputs.archive_branch }} 已存在"
+        else
+          echo "branch_exists=false" >> $GITHUB_OUTPUT
+          echo "📝 归档分支 ${{ inputs.archive_branch }} 不存在，需要创建"
+        fi
+
+    - name: 检出现有归档分支
+      if: steps.check_branch.outputs.branch_exists == 'true'
       uses: actions/checkout@v4
       with:
         ref: ${{ inputs.archive_branch }}
         path: archive
         token: ${{ secrets.GITHUB_TOKEN }}
-      continue-on-error: true
 
-    - name: 创建归档分支（如果不存在）
+    - name: 创建新的归档分支
+      if: steps.check_branch.outputs.branch_exists == 'false'
       run: |
-        if [ ! -d "archive" ]; then
-          echo "📝 创建新的归档分支: ${{ inputs.archive_branch }}"
-          git checkout --orphan ${{ inputs.archive_branch }}
-          git rm -rf . 2>/dev/null || true
-          echo "# 版本归档" > README.md
-          mkdir -p ${{ inputs.archive_dir }}
-          git add .
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git commit -m "Initialize archive branch"
-          git push origin ${{ inputs.archive_branch }}
-          
-          # 重新检出归档分支
-          git checkout main 2>/dev/null || git checkout master 2>/dev/null || true
-          git worktree add archive ${{ inputs.archive_branch }}
-        else
-          echo "✅ 归档分支已存在，检查目录结构"
-          ls -la archive/
-        fi
+        echo "📝 创建新的归档分支: ${{ inputs.archive_branch }}"
+        
+        # 创建孤立分支
+        git checkout --orphan ${{ inputs.archive_branch }}
+        git rm -rf . 2>/dev/null || true
+        
+        # 初始化分支内容
+        echo "# 版本归档分支" > README.md
+        echo "" >> README.md
+        echo "此分支用于存储项目的历史版本。" >> README.md
+        echo "" >> README.md
+        echo "- 归档目录: ${{ inputs.archive_dir }}" >> README.md
+        echo "- 创建时间: $(date)" >> README.md
+        
+        mkdir -p ${{ inputs.archive_dir }}
+        
+        # 提交并推送
+        git add .
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git commit -m "Initialize archive branch ${{ inputs.archive_branch }}"
+        git push origin ${{ inputs.archive_branch }}
+        
+        # 切回主分支并创建工作树
+        git checkout ${{ github.ref_name }} 2>/dev/null || git checkout main 2>/dev/null || git checkout master 2>/dev/null || true
+        git worktree add archive ${{ inputs.archive_branch }}
+
+    - name: 设置归档分支工作树
+      if: steps.check_branch.outputs.branch_exists == 'true'
+      run: |
+        echo "✅ 归档分支已存在，设置工作树"
+        git worktree add archive ${{ inputs.archive_branch }} 2>/dev/null || true
         
         # 确保归档目录存在
         mkdir -p archive/${{ inputs.archive_dir }}
