@@ -268,6 +268,22 @@ jobs:
           echo "✅ 版本 ${{ steps.get_version.outputs.version }} 归档完成"
         fi
 
+    - name: 检查归档目录结构
+      run: |
+        echo "🔍 检查归档目录结构："
+        ls -la archive/
+        echo ""
+        echo "📋 版本目录内容："
+        ls -la archive/${{ inputs.archive_dir }}/ || echo "版本目录为空"
+        echo ""
+        echo "📄 版本索引文件："
+        if [ -f "archive/${{ inputs.archive_dir }}/index.json" ]; then
+          echo "✅ index.json 存在"
+          cat archive/${{ inputs.archive_dir }}/index.json
+        else
+          echo "❌ index.json 不存在"
+        fi
+
     - name: 创建版本浏览主页
       run: |
         cd archive
