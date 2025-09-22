@@ -37,6 +37,9 @@ on:
 jobs:
   archive-version:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     permissions:
       contents: write
       pages: write
@@ -238,6 +241,15 @@ jobs:
           echo "✅ 版本 ${{ steps.get_version.outputs.version }} 归档完成"
         fi
 
+    - name: 上传归档产物到 Pages
+      if: ${{ inputs.enable_pages }}
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: archive
+
     - name: 部署到 GitHub Pages
+      id: deployment
       if: ${{ inputs.enable_pages }}
       uses: actions/deploy-pages@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
