@@ -243,7 +243,7 @@ jobs:
 
     - name: 上传归档产物到 Pages
       if: ${{ inputs.enable_pages }}
-      uses: actions/upload-pages-artifact@v2
+      uses: actions/upload-pages-artifact@v3
       with:
         path: archive
 
