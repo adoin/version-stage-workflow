@@ -54,7 +54,7 @@ function updateVersionIndex(archiveDir, newVersion) {
               commit: metadata.commit,
               buildDate: metadata.buildDate,
               buildTime: metadata.buildTime,
-              path: dir.name
+              path: `versions/${dir.name}`  // 完整的相对路径
             });
           } catch (error) {
             console.warn(`⚠️  无法读取版本元数据: ${dir.name}`);

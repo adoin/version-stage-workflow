@@ -64,53 +64,44 @@
         <style>
           #version-switcher {
             position: fixed;
-            top: 20px;
-            left: 20px;
+            top: 15px;
+            left: 15px;
             z-index: 1000;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           }
           
           .version-trigger {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 18px;
+            font-size: 14px;
             cursor: pointer;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            transition: all 0.3s ease;
-            border: 3px solid rgba(255,255,255,0.2);
+            transition: background 0.2s ease;
           }
           
           .version-trigger:hover {
-            transform: scale(1.1);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.25);
-          }
-          
-          .version-trigger.active {
-            background: linear-gradient(135deg, #764ba2, #667eea);
+            background: rgba(0,0,0,0.8);
           }
           
           .version-dropdown {
             position: absolute;
-            top: 60px;
+            top: 45px;
             left: 0;
-            min-width: 300px;
-            max-width: 400px;
-            max-height: 400px;
+            width: 220px;
+            max-height: 300px;
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            border-radius: 6px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
             opacity: 0;
             visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.3s ease;
+            transform: translateY(-5px);
+            transition: all 0.2s ease;
             overflow: hidden;
-            backdrop-filter: blur(20px);
           }
           
           .version-dropdown.show {
@@ -120,57 +111,55 @@
           }
           
           .dropdown-header {
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            font-weight: 600;
-            font-size: 16px;
-            text-align: center;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
           }
           
           .dropdown-search {
-            padding: 15px;
+            padding: 10px;
             border-bottom: 1px solid #eee;
           }
           
           .search-input {
             width: 100%;
-            padding: 10px 15px;
+            padding: 6px 10px;
             border: 1px solid #ddd;
-            border-radius: 25px;
+            border-radius: 4px;
             outline: none;
-            font-size: 14px;
-            transition: border-color 0.3s ease;
+            font-size: 12px;
             box-sizing: border-box;
           }
           
           .search-input:focus {
-            border-color: #667eea;
+            border-color: #007bff;
           }
           
           .version-list {
-            max-height: 250px;
+            max-height: 200px;
             overflow-y: auto;
           }
           
           .version-item {
-            padding: 15px 20px;
+            padding: 10px 15px;
             cursor: pointer;
             border-bottom: 1px solid #f0f0f0;
-            transition: background-color 0.2s ease;
+            transition: background-color 0.15s ease;
             display: flex;
             justify-content: space-between;
             align-items: center;
           }
           
           .version-item:hover {
-            background-color: #f8f9ff;
+            background-color: #f8f9fa;
           }
           
           .version-item.current {
-            background: linear-gradient(135deg, #e8f4fd, #f0f8ff);
-            color: #2c5aa0;
-            font-weight: 600;
+            background: #e3f2fd;
+            color: #1976d2;
           }
           
           .version-item:last-child {
@@ -182,50 +171,34 @@
           }
           
           .version-name {
+            font-size: 13px;
             font-weight: 500;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
           }
           
           .version-date {
-            font-size: 12px;
+            font-size: 11px;
             color: #666;
           }
           
           .version-badge {
-            background: #27ae60;
+            background: #28a745;
             color: white;
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-size: 11px;
-            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 500;
           }
           
           .current-badge {
-            background: #3498db;
+            background: #007bff;
           }
           
           .loading, .no-results {
-            padding: 20px;
+            padding: 15px;
             text-align: center;
             color: #999;
-          }
-          
-          @media (max-width: 768px) {
-            #version-switcher {
-              top: 10px;
-              left: 10px;
-            }
-            
-            .version-trigger {
-              width: 45px;
-              height: 45px;
-              font-size: 16px;
-            }
-            
-            .version-dropdown {
-              min-width: 280px;
-              max-width: calc(100vw - 40px);
-            }
+            font-size: 12px;
           }
         </style>
         
@@ -433,6 +406,7 @@
       const fullPath = versionPath + '/index.html';
       
       console.log(`🔄 切换到版本 ${version}: ${fullPath}`);
+      console.log(`🔍 版本路径数据: ${versionPath}`);
       
       // 加载版本到 iframe
       this.iframe.src = fullPath;
