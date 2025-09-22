@@ -63,11 +63,31 @@ jobs:
         npm install --production
 
     - name: 下载构建产物
+      id: download_artifacts
       uses: actions/download-artifact@v4
       with:
         name: build-artifacts
         path: ./build-output
       continue-on-error: true
+
+    - name: 检查 artifact 下载状态
+      run: |
+        if [ "${{ steps.download_artifacts.outcome }}" = "failure" ]; then
+          echo "❌ Artifact 下载失败！"
+          echo "💡 可能的原因："
+          echo "   1. build job 没有成功上传 artifact"
+          echo "   2. artifact 名称不匹配（期望: build-artifacts）"
+          echo "   3. artifact 已过期或不存在"
+          echo ""
+          echo "🔍 请检查调用方工作流的 build job："
+          echo "   - uses: actions/upload-artifact@v4"
+          echo "     with:"
+          echo "       name: build-artifacts  # 👈 必须是这个名称"
+          echo "       path: your-build-dir"
+          exit 1
+        fi
+        
+        echo "✅ Artifact 下载成功"
 
     - name: 验证构建产物目录
       run: |
@@ -89,30 +109,42 @@ jobs:
           ls -la "$BUILD_PATH"
         else
           echo "❌ 构建产物目录不存在: $BUILD_PATH"
-          echo "💡 提示：请确保在build job中上传了正确的构建产物"
-          echo "📋 实际的artifact结构："
-          find ./build-output -type d 2>/dev/null || true
+          echo "💡 可能的原因："
+          echo "   1. build_dir 参数设置错误（当前: ${{ inputs.build_dir }}）"
+          echo "   2. 调用方上传的 artifact 目录结构不正确"
+          echo ""
+          echo "📋 实际的 artifact 结构："
+          find ./build-output -type d 2>/dev/null || echo "   (空目录)"
+          echo ""
+          echo "📋 artifact 中的所有文件："
+          find ./build-output -type f 2>/dev/null || echo "   (无文件)"
           exit 1
         fi
 
     - name: 获取版本号
       id: get_version
       run: |
-        if [ -n "${{ inputs.version }}" ]; then
-          VERSION="${{ inputs.version }}"
-        elif [ "${{ github.ref_type }}" == "tag" ]; then
-          VERSION="${{ github.ref_name }}"
-        else
-          # 从 package.json 获取版本号（如果存在）
-          if [ -f "package.json" ]; then
-            VERSION="v$(node -p "require('./package.json').version" 2>/dev/null || echo "1.0.0")"
+        # 只从 package.json 获取版本号
+        if [ -f "package.json" ]; then
+          PACKAGE_VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "")
+          if [ -n "$PACKAGE_VERSION" ]; then
+            VERSION="v$PACKAGE_VERSION"
           else
-            VERSION="v1.0.0"
+            echo "❌ 无法从 package.json 读取版本号"
+            echo "💡 请确保 package.json 包含有效的 version 字段"
+            exit 1
           fi
+        else
+          echo "❌ 未找到 package.json 文件"
+          echo "💡 此工作流需要项目包含 package.json 文件并定义 version 字段"
+          echo "📋 当前目录内容："
+          ls -la
+          exit 1
         fi
+        
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "clean_version=${VERSION#v}" >> $GITHUB_OUTPUT
-        echo "🏷️ 使用版本号: $VERSION"
+        echo "🏷️ 从 package.json 获取版本号: $VERSION"
 
     - name: 检查归档分支是否存在
       id: check_branch
