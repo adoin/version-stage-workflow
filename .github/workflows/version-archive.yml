@@ -73,20 +73,19 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: build-artifacts
-        path: ./downloaded-artifacts
+        path: ./build-output
       continue-on-error: true
 
     - name: 验证构建产物目录
       run: |
         echo "🔍 检查下载的构建产物："
-        ls -la ./downloaded-artifacts/
+        ls -la ./build-output/
         
-        # 检查原始构建目录路径
-        BUILD_PATH="./downloaded-artifacts/${{ inputs.build_dir }}"
-        
-        # 如果build_dir是"."，则直接使用downloaded-artifacts
+        # 确定构建产物的实际路径
         if [ "${{ inputs.build_dir }}" = "." ]; then
-          BUILD_PATH="./downloaded-artifacts"
+          BUILD_PATH="./build-output"
+        else
+          BUILD_PATH="./build-output/${{ inputs.build_dir }}"
         fi
         
         echo "🎯 目标构建路径: $BUILD_PATH"
@@ -97,9 +96,9 @@ jobs:
           ls -la "$BUILD_PATH"
         else
           echo "❌ 构建产物目录不存在: $BUILD_PATH"
-          echo "💡 提示：请确保在build job中上传了正确的artifact"
-          echo "📋 下载的artifact结构："
-          find ./downloaded-artifacts -type d 2>/dev/null || true
+          echo "💡 提示：请确保在build job中上传了正确的构建产物"
+          echo "📋 实际的artifact结构："
+          find ./build-output -type d 2>/dev/null || true
           exit 1
         fi
 
@@ -205,9 +204,9 @@ jobs:
         
         # 确定正确的构建目录路径
         if [ "${{ inputs.build_dir }}" = "." ]; then
-          BUILD_PATH="../downloaded-artifacts"
+          BUILD_PATH="../build-output"
         else
-          BUILD_PATH="../downloaded-artifacts/${{ inputs.build_dir }}"
+          BUILD_PATH="../build-output/${{ inputs.build_dir }}"
         fi
         
         echo "🎯 实际构建路径: $BUILD_PATH"
@@ -241,15 +240,60 @@ jobs:
           echo "✅ 版本 ${{ steps.get_version.outputs.version }} 归档完成"
         fi
 
-    - name: 复制归档主页模板
+    - name: 创建版本浏览主页
       run: |
-        # 复制预制的归档主页文件
-        cp .version-archive-tools/templates/archive-index.html archive/index.html
+        cd archive
         
-        # 替换模板中的变量
-        sed -i "s|{{ARCHIVE_DIR}}|${{ inputs.archive_dir }}|g" archive/index.html
+        # 创建简洁的版本浏览主页
+        cat > index.html << 'EOF'
+        <!DOCTYPE html>
+        <html lang="zh-CN">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>版本归档</title>
+            <style>
+                body {
+                    margin: 0;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    background: #f5f5f5;
+                }
+                .main-content {
+                    margin: 0;
+                    padding: 0;
+                    width: 100vw;
+                    height: 100vh;
+                    position: relative;
+                }
+                #version-iframe {
+                    width: 100%;
+                    height: 100%;
+                    border: none;
+                    display: block;
+                }
+                .loading {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    color: #666;
+                    font-size: 18px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="main-content">
+                <div class="loading" id="loading">正在加载最新版本...</div>
+                <iframe id="version-iframe" style="display: none;"></iframe>
+            </div>
+            
+            <!-- 版本切换器 -->
+            <script src="version-switcher-iframe.js"></script>
+        </body>
+        </html>
+        EOF
         
-        echo "✅ 复制了归档主页模板"
+        echo "✅ 创建了版本浏览主页"
 
     - name: 上传归档产物到 Pages
       if: ${{ inputs.enable_pages }}
