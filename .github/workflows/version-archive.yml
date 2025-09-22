@@ -66,14 +66,28 @@ jobs:
         cd .version-archive-tools
         npm install --production
 
+    - name: 下载构建产物
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts
+        path: .
+      continue-on-error: true
+
     - name: 验证构建产物目录
       run: |
-        if [ ! -d "${{ inputs.build_dir }}" ]; then
+        echo "🔍 检查当前目录内容："
+        ls -la
+        if [ -d "${{ inputs.build_dir }}" ]; then
+          echo "✅ 构建产物目录存在: ${{ inputs.build_dir }}"
+          echo "📁 目录内容："
+          ls -la "${{ inputs.build_dir }}"
+        else
           echo "❌ 构建产物目录不存在: ${{ inputs.build_dir }}"
-          echo "请确保在调用此工作流前已完成项目构建"
+          echo "💡 提示：请确保在build job中上传了artifact"
+          echo "📋 当前目录结构："
+          find . -type d -name "dist" -o -name ".vitepress" 2>/dev/null || true
           exit 1
         fi
-        echo "✅ 构建产物目录存在: ${{ inputs.build_dir }}"
 
     - name: 获取版本号
       id: get_version
