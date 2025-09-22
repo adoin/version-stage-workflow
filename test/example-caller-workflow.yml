@@ -56,8 +56,7 @@ jobs:
       archive_dir: 'versions'        # 归档目录（可选）
       force_archive: false           # 是否强制覆盖（可选）
       enable_pages: true             # 是否部署到GitHub Pages（可选）
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # 注意：GITHUB_TOKEN 由系统自动提供，无需手动传递
 
   # 如果需要下载构建产物
   download-and-archive:

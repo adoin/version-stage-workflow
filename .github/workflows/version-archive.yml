@@ -32,9 +32,7 @@ on:
         required: false
         type: boolean
         default: true
-    secrets:
-      GITHUB_TOKEN:
-        required: true
+    # GITHUB_TOKEN 是系统自动提供的，无需在此声明
 
 jobs:
   archive-version:

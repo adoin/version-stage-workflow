@@ -69,8 +69,7 @@ jobs:
       archive_dir: 'versions'        # 归档目录（可选）
       force_archive: false           # 是否强制覆盖（可选）
       enable_pages: true             # 是否部署到GitHub Pages（可选）
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # 注意：GITHUB_TOKEN 由系统自动提供，无需手动传递
 ```
 
 ### 2. 配置 GitHub Pages
@@ -83,13 +82,32 @@ jobs:
 
 ### 3. 发布版本
 
+#### 方式一：自动触发（推荐）
+
 ```bash
-# 创建并推送版本标签
+# 1. 确保代码已提交并推送
+git add .
+git commit -m "准备发布 v1.0.0"
+git push origin main
+
+# 2. 创建并推送版本标签
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-或者通过 GitHub 界面手动触发工作流。
+**自动执行**：推送标签后会自动触发构建和归档流程。
+
+#### 方式二：手动触发
+
+1. **GitHub界面操作**：
+   - 进入仓库 → 点击 "Actions" 标签页
+   - 选择 "Build and Archive" 工作流
+   - 点击 "Run workflow" 按钮
+   - 可选填写版本号（如 `v1.2.0`）
+
+2. **参数说明**：
+   - **留空版本号**：自动从 `package.json` 读取
+   - **指定版本号**：使用自定义版本（如 `v1.2.0`）
 
 ## 配置参数
 
