@@ -240,7 +240,4 @@ jobs:
 
     - name: 部署到 GitHub Pages
       if: ${{ inputs.enable_pages }}
-      uses: actions/deploy-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: archive
+      uses: actions/deploy-pages@v4
