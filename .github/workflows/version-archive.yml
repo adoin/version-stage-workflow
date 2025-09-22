@@ -133,13 +133,26 @@ jobs:
           # 重新检出归档分支
           git checkout main 2>/dev/null || git checkout master 2>/dev/null || true
           git worktree add archive ${{ inputs.archive_branch }}
+        else
+          echo "✅ 归档分支已存在，检查目录结构"
+          ls -la archive/
         fi
+        
+        # 确保归档目录存在
+        mkdir -p archive/${{ inputs.archive_dir }}
+        echo "📁 归档目录结构："
+        ls -la archive/
 
     - name: 复制版本切换器资源
       run: |
+        # 确保归档目录存在
+        mkdir -p archive/${{ inputs.archive_dir }}
+        
         # 复制版本切换器文件到归档目录
         cp .version-archive-tools/src/version-switcher.js archive/${{ inputs.archive_dir }}/
         cp .version-archive-tools/src/version-switcher.css archive/${{ inputs.archive_dir }}/
+        
+        echo "✅ 版本切换器资源已复制到 archive/${{ inputs.archive_dir }}/"
 
     - name: 执行版本归档
       run: |
