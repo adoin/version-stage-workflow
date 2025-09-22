@@ -156,6 +156,13 @@ jobs:
 
     - name: 执行版本归档
       run: |
+        echo "🔍 调试信息："
+        echo "版本号: ${{ steps.get_version.outputs.version }}"
+        echo "清洁版本号: ${{ steps.get_version.outputs.clean_version }}"
+        echo "构建目录: ${{ inputs.build_dir }}"
+        echo "归档目录: archive/${{ inputs.archive_dir }}"
+        echo "强制归档: ${{ inputs.force_archive }}"
+        
         cd .version-archive-tools
         node scripts/archive-version.js \
           --version="${{ steps.get_version.outputs.version }}" \

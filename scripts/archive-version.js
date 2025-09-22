@@ -13,7 +13,8 @@ function parseArgs() {
   const args = {};
   process.argv.slice(2).forEach(arg => {
     const [key, value] = arg.split('=');
-    args[key.replace('--', '')] = value || true;
+    const cleanKey = key.replace('--', '').replace(/-([a-z])/g, (match, letter) => letter.toUpperCase());
+    args[cleanKey] = value || true;
   });
   return args;
 }
