@@ -69,11 +69,6 @@ const server = http.createServer((req, res) => {
         return;
     }
     
-    if (pathname === '/test/version-switcher-iframe.js') {
-        serveFile(path.join(__dirname, '..', 'src', 'version-switcher-iframe.js'), res);
-        return;
-    }
-    
     if (pathname === '/test/version-switcher.css') {
         serveFile(path.join(__dirname, '..', 'src', 'version-switcher.css'), res);
         return;
