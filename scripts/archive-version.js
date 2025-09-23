@@ -152,12 +152,28 @@ function archiveVersion(options) {
 (function() {
   // 版本切换器自动注入脚本
   if (typeof window !== 'undefined' && !window.versionSwitcherInjected) {
+    
+    // 检测 VitePress 环境，如果是则跳过注入
+    if (window.__VITEPRESS__ || 
+        window.__VP_HASH_MAP__ ||
+        document.querySelector('script[src*="framework"]') ||
+        document.querySelector('meta[name="generator"][content*="VitePress"]')) {
+      console.log('🔍 检测到 VitePress 环境，跳过版本切换器注入');
+      return;
+    }
+    
+    // 检查是否在 iframe 中
+    if (window.self !== window.top) {
+      console.log('📄 在 iframe 中，跳过版本切换器注入');
+      return;
+    }
+    
     window.versionSwitcherInjected = true;
     window.currentVersion = '${cleanVersion}';
     
-    // 动态加载版本切换器
+    // 动态加载版本切换器 (iframe 模式)
     const script = document.createElement('script');
-    script.src = '../version-switcher.js';
+    script.src = '../version-switcher-iframe.js';
     script.async = true;
     document.head.appendChild(script);
     
