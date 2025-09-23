@@ -121,6 +121,7 @@ git push origin v1.0.0
 | `archive_dir` | ❌ | `versions` | 归档目录名称 |
 | `force_archive` | ❌ | `false` | 是否强制覆盖已存在版本 |
 | `enable_pages` | ❌ | `true` | 是否部署到 GitHub Pages |
+| `path_prefix` | ❌ | `''` | 绝对路径前缀，留空自动检测 |
 
 ### 版本号检测规则
 
@@ -268,6 +269,64 @@ archive:
 - 示例 HTML 项目
 - 构建脚本
 - 完整的工作流配置
+
+## 路径前缀配置
+
+### 问题背景
+
+不同项目的绝对路径前缀可能不同：
+- GitHub Pages: `/repository-name/assets/...`
+- Vite: `/project-name/assets/...`
+- Next.js: `/basePath/assets/...`
+
+### 配置方法
+
+**方法一：自动检测**
+```yaml
+archive:
+  uses: your-username/version-stage-workflow/.github/workflows/version-archive.yml@main
+  with:
+    build_dir: 'dist'
+    # 不指定 path_prefix，自动检测
+```
+
+**方法二：手动指定**
+```yaml
+archive:
+  uses: your-username/version-stage-workflow/.github/workflows/version-archive.yml@main
+  with:
+    build_dir: 'dist'
+    path_prefix: 'my-project'  # 手动指定前缀
+```
+
+### 支持的路径类型
+
+脚本会修复以下类型的绝对路径：
+
+```html
+<!-- HTML 属性 -->
+<link href="/my-project/assets/style.css" rel="stylesheet">
+<script src="/my-project/js/app.js"></script>
+<img src="/my-project/images/logo.png">
+
+<!-- CSS 中的 url() -->
+<style>
+  .bg { background: url('/project/images/bg.jpg'); }
+</style>
+
+<!-- 修复后都变为相对路径 -->
+<link href="./assets/style.css" rel="stylesheet">
+<script src="./js/app.js"></script>
+<img src="./images/logo.png">
+```
+
+### 支持的资源目录
+
+- `assets/` - 通用资源目录
+- `js/`, `css/` - 脚本和样式
+- `images/`, `fonts/` - 图片和字体
+- `dist/`, `static/` - 构建产物
+- `_next/`, `_nuxt/` - 框架特定目录
 
 ## 贡献
 

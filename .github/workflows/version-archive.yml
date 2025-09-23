@@ -28,6 +28,11 @@ on:
         required: false
         type: boolean
         default: true
+      path_prefix:
+        description: '绝对路径前缀，留空自动检测'
+        required: false
+        type: string
+        default: ''
     # GITHUB_TOKEN 是系统自动提供的，无需在此声明
 
 jobs:
@@ -240,12 +245,24 @@ jobs:
         echo "🎯 实际构建路径: $BUILD_PATH"
         
         cd .version-archive-tools
-        node scripts/archive-version.js \
-          --version="${{ steps.get_version.outputs.version }}" \
-          --clean-version="${{ steps.get_version.outputs.clean_version }}" \
-          --build-dir="$BUILD_PATH" \
-          --archive-dir="../archive/${{ inputs.archive_dir }}" \
-          --force="${{ inputs.force_archive }}"
+        # 构建归档命令
+        ARCHIVE_CMD="node scripts/archive-version.js \
+          --version=\"${{ steps.get_version.outputs.version }}\" \
+          --clean-version=\"${{ steps.get_version.outputs.clean_version }}\" \
+          --build-dir=\"$BUILD_PATH\" \
+          --archive-dir=\"../archive/${{ inputs.archive_dir }}\" \
+          --force=\"${{ inputs.force_archive }}\""
+        
+        # 如果指定了路径前缀，添加到命令中
+        if [ -n "${{ inputs.path_prefix }}" ]; then
+          ARCHIVE_CMD="$ARCHIVE_CMD --path-prefix=\"${{ inputs.path_prefix }}\""
+          echo "🎯 使用指定的路径前缀: ${{ inputs.path_prefix }}"
+        else
+          echo "🔍 将自动检测路径前缀"
+        fi
+        
+        # 执行归档命令
+        eval $ARCHIVE_CMD
 
     - name: 更新版本索引
       run: |

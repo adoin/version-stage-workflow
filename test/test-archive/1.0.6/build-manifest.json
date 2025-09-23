@@ -1,0 +1,14 @@
+{
+  "version": "v1.0.0",
+  "buildTime": "2025/9/22 14:27:34",
+  "files": [
+    "index.html",
+    "assets/style.css",
+    "assets/app.js"
+  ],
+  "size": {
+    "index.html": 3657,
+    "assets/style.css": 284,
+    "assets/app.js": 444
+  }
+}
