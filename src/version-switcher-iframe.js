@@ -10,6 +10,27 @@
   if (window.versionSwitcherInitialized) {
     return;
   }
+  
+  // VitePress 特殊处理：检查是否在 iframe 中
+  if (typeof window !== 'undefined' && (
+    window.__VITEPRESS__ || 
+    window.__VP_HASH_MAP__ ||
+    document.querySelector('script[src*="framework"]') ||
+    document.querySelector('meta[name="generator"][content*="VitePress"]')
+  )) {
+    console.log('🔍 检测到 VitePress 环境');
+    
+    // 检查是否在 iframe 中（版本切换器应该只在主页面，不在 iframe 内的 VitePress 页面）
+    if (window.self !== window.top) {
+      console.log('📄 在 iframe 中的 VitePress 页面，跳过版本切换器初始化');
+      return;
+    }
+    
+    // 如果在主页面，说明这是主页面的 VitePress，不应该有版本切换器
+    console.log('🏠 主页面的 VitePress，版本切换器应该由主页面管理');
+    return;
+  }
+  
   window.versionSwitcherInitialized = true;
 
   class VersionSwitcher {
@@ -444,7 +465,7 @@
 
   // 延迟初始化，避免与 SSR 框架冲突
   function initVersionSwitcher() {
-    // 检查是否是 SSR 环境（如 Nuxt.js, Next.js, Vue SSR）
+    // 检查是否是其他 SSR 环境（Nuxt.js, Next.js, Vue SSR）
     const isSSR = typeof window !== 'undefined' && (
       window.__NUXT__ ||             // Nuxt.js
       window.__NEXT_DATA__ ||        // Next.js
@@ -453,13 +474,9 @@
     );
     
     if (isSSR) {
-      // SSR 环境：等待 hydration 完成
+      // 其他 SSR 环境：等待 hydration 完成
       console.log('🔍 检测到 SSR 环境，延迟初始化版本切换器');
-      
-      // 等待更长时间确保 hydration 完成
-      setTimeout(() => {
-        new VersionSwitcher();
-      }, 2000);
+      setTimeout(() => new VersionSwitcher(), 2000);
     } else {
       // 非 SSR 环境：正常初始化
       new VersionSwitcher();
