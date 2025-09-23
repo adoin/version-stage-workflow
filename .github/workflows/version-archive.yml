@@ -204,6 +204,9 @@ jobs:
         # 回到工作目录
         cd ${{ github.workspace }}
         
+        # 获取最新的远程分支信息
+        git fetch origin
+        
         # 创建工作树
         git worktree add archive ${{ inputs.archive_branch }}
 
