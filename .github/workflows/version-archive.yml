@@ -176,11 +176,16 @@ jobs:
       run: |
         echo "📝 创建新的归档分支: ${{ inputs.archive_branch }}"
         
-        # 创建孤立分支
-        git checkout --orphan ${{ inputs.archive_branch }}
-        git rm -rf . 2>/dev/null || true
+        # 创建临时目录来初始化分支
+        mkdir -p /tmp/init-archive
+        cd /tmp/init-archive
         
-        # 初始化分支内容
+        # 初始化新的 git 仓库
+        git init
+        git config user.email "action@github.com"
+        git config user.name "GitHub Action"
+        
+        # 创建初始内容
         echo "# 版本归档分支" > README.md
         echo "" >> README.md
         echo "此分支用于存储项目的历史版本。" >> README.md
@@ -190,15 +195,16 @@ jobs:
         
         mkdir -p ${{ inputs.archive_dir }}
         
-        # 提交并推送
+        # 提交并推送到远程
         git add .
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
         git commit -m "Initialize archive branch ${{ inputs.archive_branch }}"
-        git push origin ${{ inputs.archive_branch }}
+        git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+        git push -u origin HEAD:${{ inputs.archive_branch }}
         
-        # 切回主分支并创建工作树
-        git checkout ${{ github.ref_name }} 2>/dev/null || git checkout main 2>/dev/null || git checkout master 2>/dev/null || true
+        # 回到工作目录
+        cd ${{ github.workspace }}
+        
+        # 创建工作树
         git worktree add archive ${{ inputs.archive_branch }}
 
     - name: 设置归档分支工作树
