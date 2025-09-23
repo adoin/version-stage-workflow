@@ -57,6 +57,14 @@
     }
 
     createUI() {
+      // 检查是否已存在版本切换器
+      const existing = document.getElementById('version-switcher');
+      if (existing) {
+        console.log('🔄 版本切换器已存在，跳过创建');
+        this.container = existing;
+        return;
+      }
+      
       // 创建版本切换器容器
       this.container = document.createElement('div');
       this.container.id = 'version-switcher';
@@ -221,7 +229,14 @@
         </div>
       `;
       
-      document.body.appendChild(this.container);
+      // 安全地添加到页面
+      const targetElement = document.body || document.documentElement;
+      if (targetElement) {
+        targetElement.appendChild(this.container);
+      } else {
+        console.error('❌ 无法找到合适的父元素来添加版本切换器');
+        return;
+      }
       
       this.trigger = document.getElementById('version-trigger');
       this.dropdown = document.getElementById('version-dropdown');
@@ -427,13 +442,35 @@
     }
   }
 
+  // 延迟初始化，避免与 SSR 框架冲突
+  function initVersionSwitcher() {
+    // 检查是否是 SSR 环境（如 Nuxt.js, Next.js, Vue SSR）
+    const isSSR = typeof window !== 'undefined' && (
+      window.__NUXT__ ||             // Nuxt.js
+      window.__NEXT_DATA__ ||        // Next.js
+      window.__VUE_SSR_CONTEXT__ ||  // Vue SSR
+      window.__VUE_SSR_SETTERS__     // Vue SSR (另一个标识符)
+    );
+    
+    if (isSSR) {
+      // SSR 环境：等待 hydration 完成
+      console.log('🔍 检测到 SSR 环境，延迟初始化版本切换器');
+      
+      // 等待更长时间确保 hydration 完成
+      setTimeout(() => {
+        new VersionSwitcher();
+      }, 2000);
+    } else {
+      // 非 SSR 环境：正常初始化
+      new VersionSwitcher();
+    }
+  }
+  
   // 等待 DOM 加载完成后初始化
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      new VersionSwitcher();
-    });
+    document.addEventListener('DOMContentLoaded', initVersionSwitcher);
   } else {
-    new VersionSwitcher();
+    initVersionSwitcher();
   }
 
 })();
