@@ -54,7 +54,7 @@ function updateVersionIndex(archiveDir, newVersion) {
               commit: metadata.commit,
               buildDate: metadata.buildDate,
               buildTime: metadata.buildTime,
-              path: `versions/${dir.name}`  // 完整的相对路径
+              path: dir.name  // 版本路径 (如: v1.0.0)
             });
           } catch (error) {
             console.warn(`⚠️  无法读取版本元数据: ${dir.name}`);
@@ -114,115 +114,109 @@ function updateVersionIndex(archiveDir, newVersion) {
 }
 
 function generateVersionSwitcherPage(archiveDir, versionIndex) {
+  // 创建重定向到最新版本的页面
   const indexHtml = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>版本归档 - Version Archive</title>
-    <link rel="stylesheet" href="version-switcher.css">
+    <title>版本归档 - 重定向中...</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
-            padding: 20px;
-            background: #f5f5f5;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            padding: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .header {
+        .loading-container {
             text-align: center;
-            margin-bottom: 40px;
-        }
-        .version-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
-        }
-        .version-card {
-            border: 1px solid #e1e5e9;
-            border-radius: 8px;
-            padding: 20px;
-            transition: all 0.3s ease;
-        }
-        .version-card:hover {
-            border-color: #0366d6;
-            box-shadow: 0 4px 12px rgba(3,102,214,0.15);
-        }
-        .version-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #0366d6;
-            margin-bottom: 10px;
-        }
-        .version-info {
-            color: #586069;
-            font-size: 14px;
-            margin-bottom: 15px;
-        }
-        .version-link {
-            display: inline-block;
-            background: #0366d6;
             color: white;
-            padding: 8px 16px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-size: 14px;
-            transition: background 0.3s ease;
-        }
-        .version-link:hover {
-            background: #0256cc;
-        }
-        .latest-badge {
-            background: #28a745;
-            color: white;
-            padding: 2px 8px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
             border-radius: 12px;
-            font-size: 12px;
-            margin-left: 10px;
+            backdrop-filter: blur(10px);
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .version-list {
+            margin-top: 30px;
+            text-align: left;
+        }
+        .version-item {
+            margin: 10px 0;
+        }
+        .version-item a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            display: inline-block;
+            transition: all 0.2s ease;
+        }
+        .version-item a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .latest {
+            background: rgba(40, 167, 69, 0.3);
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🗂️ 版本归档中心</h1>
-            <p>管理和切换不同版本的构建产物</p>
-            <p><strong>总版本数:</strong> ${versionIndex.count} | <strong>最新版本:</strong> ${versionIndex.latest?.version || 'none'}</p>
-        </div>
-
-        <div class="version-grid">
+    <div class="loading-container">
+        <div class="spinner"></div>
+        <h2>🚀 正在重定向到最新版本...</h2>
+        <p>如果没有自动跳转，请手动选择版本：</p>
+        
+        <div class="version-list">
             ${versionIndex.versions.map(version => `
-                <div class="version-card">
-                    <div class="version-title">
-                        ${version.version}
-                        ${version.cleanVersion === versionIndex.latest?.cleanVersion ? '<span class="latest-badge">最新</span>' : ''}
-                    </div>
-                    <div class="version-info">
-                        构建日期: ${version.buildDate}
-                    </div>
-                    <a href="${version.path}/" class="version-link">访问此版本</a>
+                <div class="version-item">
+                    <a href="${version.path}/" ${version.cleanVersion === versionIndex.latest?.cleanVersion ? 'class="latest"' : ''}>
+                        ${version.version} ${version.cleanVersion === versionIndex.latest?.cleanVersion ? '(最新)' : ''}
+                    </a>
                 </div>
             `).join('')}
         </div>
     </div>
 
-    <div id="version-switcher"></div>
-    <script src="version-switcher.js"></script>
+    <script>
+        // 自动重定向到最新版本
+        const latestVersion = ${JSON.stringify(versionIndex.latest)};
+        
+        if (latestVersion) {
+            console.log('🔄 重定向到最新版本:', latestVersion.version);
+            
+            // 延迟 1 秒后重定向，给用户看到加载页面
+            setTimeout(() => {
+                window.location.href = latestVersion.path + '/';
+            }, 1000);
+        } else {
+            document.querySelector('.loading-container h2').textContent = '❌ 未找到可用版本';
+            document.querySelector('.spinner').style.display = 'none';
+        }
+    </script>
 </body>
 </html>`;
 
   const indexPath = path.join(archiveDir, 'index.html');
   fs.writeFileSync(indexPath, indexHtml);
   
-  console.log(`📄 生成版本切换器主页: index.html`);
+  console.log(`📄 生成版本重定向页面: index.html`);
 }
 
 // 主执行逻辑

@@ -46,7 +46,7 @@ jobs:
     with:
       build_dir: 'dist'              # 构建产物目录
       archive_branch: 'gh-pages'     # 归档分支（可选）
-      archive_dir: 'versions'        # 归档目录（可选）
+      # archive_dir: '.'             # 归档目录（可选，默认为根目录）
       force_archive: false           # 是否强制覆盖（可选）
       enable_pages: true             # 是否部署到GitHub Pages（可选）
     # 注意：GITHUB_TOKEN 由系统自动提供，无需手动传递

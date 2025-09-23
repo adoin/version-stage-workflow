@@ -118,10 +118,9 @@ git push origin v1.0.0
 | `build_dir` | ✅ | `dist` | 构建产物目录（相对路径） |
 | `version` | ❌ | 自动检测 | 版本号（如 v1.0.0） |
 | `archive_branch` | ❌ | `gh-pages` | 归档分支名称 |
-| `archive_dir` | ❌ | `versions` | 归档目录名称 |
+| `archive_dir` | ❌ | `.` | 归档目录名称（根目录） |
 | `force_archive` | ❌ | `false` | 是否强制覆盖已存在版本 |
 | `enable_pages` | ❌ | `true` | 是否部署到 GitHub Pages |
-| `path_prefix` | ❌ | `''` | 绝对路径前缀，留空自动检测 |
 
 ### 版本号检测规则
 
@@ -270,63 +269,28 @@ archive:
 - 构建脚本
 - 完整的工作流配置
 
-## 路径前缀配置
+## URL 路径切换方案
 
-### 问题背景
+### 设计理念
 
-不同项目的绝对路径前缀可能不同：
-- GitHub Pages: `/repository-name/assets/...`
-- Vite: `/project-name/assets/...`
-- Next.js: `/basePath/assets/...`
+采用 URL 路径切换方案，每个版本都有独立的 URL：
+- `https://username.github.io/project/` - 自动重定向到最新版本
+- `https://username.github.io/project/v1.0.0/` - 版本 1.0.0
+- `https://username.github.io/project/v1.0.1/` - 版本 1.0.1
 
-### 配置方法
+### 优势
 
-**方法一：自动检测**
-```yaml
-archive:
-  uses: your-username/version-stage-workflow/.github/workflows/version-archive.yml@main
-  with:
-    build_dir: 'dist'
-    # 不指定 path_prefix，自动检测
-```
+- ✅ **完全避免 iframe 问题**：无 SSR hydration 冲突
+- ✅ **SEO 友好**：每个版本独立 URL，可直接分享
+- ✅ **性能优化**：直接 URL 跳转，无 iframe 开销
+- ✅ **兼容性好**：支持所有现代浏览器和框架
 
-**方法二：手动指定**
-```yaml
-archive:
-  uses: your-username/version-stage-workflow/.github/workflows/version-archive.yml@main
-  with:
-    build_dir: 'dist'
-    path_prefix: 'my-project'  # 手动指定前缀
-```
+### 版本切换器
 
-### 支持的路径类型
-
-脚本会修复以下类型的绝对路径：
-
-```html
-<!-- HTML 属性 -->
-<link href="/my-project/assets/style.css" rel="stylesheet">
-<script src="/my-project/js/app.js"></script>
-<img src="/my-project/images/logo.png">
-
-<!-- CSS 中的 url() -->
-<style>
-  .bg { background: url('/project/images/bg.jpg'); }
-</style>
-
-<!-- 修复后都变为相对路径 -->
-<link href="./assets/style.css" rel="stylesheet">
-<script src="./js/app.js"></script>
-<img src="./images/logo.png">
-```
-
-### 支持的资源目录
-
-- `assets/` - 通用资源目录
-- `js/`, `css/` - 脚本和样式
-- `images/`, `fonts/` - 图片和字体
-- `dist/`, `static/` - 构建产物
-- `_next/`, `_nuxt/` - 框架特定目录
+每个版本页面都会自动注入版本切换器：
+- 悬浮在左上角的版本选择器
+- 支持搜索和快速切换
+- 通过 `window.location.href` 实现版本跳转
 
 ## 贡献
 

@@ -99,8 +99,8 @@ function archiveVersion(options) {
     process.exit(1);
   }
 
-  // 创建版本归档目录
-  const versionDir = path.join(absoluteArchiveDir, cleanVersion);
+  // 创建版本归档目录 (URL 路径模式: v1.0.0 格式)
+  const versionDir = path.join(absoluteArchiveDir, `v${cleanVersion}`);
   
   // 检查版本是否已存在
   if (fs.existsSync(versionDir) && force !== 'true') {
@@ -143,37 +143,19 @@ function archiveVersion(options) {
   const metadataPath = path.join(versionDir, 'version-metadata.json');
   fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
 
-  // 修复 HTML 文件中的绝对路径
-  console.log('🔧 修复 HTML 文件中的绝对路径...');
-  fixAbsolutePaths(versionDir, options.pathPrefix);
+  // URL 路径切换模式不需要修复相对路径，每个版本都有独立的 URL
 
-  // 创建版本切换器注入脚本
+  // 创建版本切换器注入脚本 (URL 路径模式)
   const injectorScript = `
 (function() {
-  // 版本切换器自动注入脚本
+  // 版本切换器自动注入脚本 (URL 路径模式)
   if (typeof window !== 'undefined' && !window.versionSwitcherInjected) {
-    
-    // 检测 VitePress 环境，如果是则跳过注入
-    if (window.__VITEPRESS__ || 
-        window.__VP_HASH_MAP__ ||
-        document.querySelector('script[src*="framework"]') ||
-        document.querySelector('meta[name="generator"][content*="VitePress"]')) {
-      console.log('🔍 检测到 VitePress 环境，跳过版本切换器注入');
-      return;
-    }
-    
-    // 检查是否在 iframe 中
-    if (window.self !== window.top) {
-      console.log('📄 在 iframe 中，跳过版本切换器注入');
-      return;
-    }
-    
     window.versionSwitcherInjected = true;
     window.currentVersion = '${cleanVersion}';
     
-    // 动态加载版本切换器 (iframe 模式)
+    // 动态加载版本切换器 (URL 路径模式)
     const script = document.createElement('script');
-    script.src = '../version-switcher-iframe.js';
+    script.src = '../version-switcher.js';
     script.async = true;
     document.head.appendChild(script);
     
@@ -206,156 +188,6 @@ if (require.main === module) {
   archiveVersion(args);
 }
 
-// 修复HTML文件中的绝对路径
-function fixAbsolutePaths(versionDir, pathPrefix = null) {
-  const htmlFiles = findHTMLFiles(versionDir);
-  
-  console.log(`🔍 找到 ${htmlFiles.length} 个 HTML 文件需要检查路径`);
-  
-  let totalFilesFixed = 0;
-  let totalPathsFixed = 0;
-  let detectedPrefixes = new Set();
-  
-  htmlFiles.forEach(htmlFile => {
-    try {
-      // 先读取原始字节来检测编码
-      const buffer = fs.readFileSync(htmlFile);
-      let content;
-      
-      // 检测 UTF-16 LE BOM
-      if (buffer.length >= 2 && buffer[0] === 0xFF && buffer[1] === 0xFE) {
-        content = buffer.toString('utf16le');
-        console.log(`   📝 检测到 UTF-16LE 编码`);
-      }
-      // 检测 UTF-16 BE BOM  
-      else if (buffer.length >= 2 && buffer[0] === 0xFE && buffer[1] === 0xFF) {
-        content = buffer.toString('utf16be');
-        console.log(`   📝 检测到 UTF-16BE 编码`);
-      }
-      // 检测 UTF-8 BOM
-      else if (buffer.length >= 3 && buffer[0] === 0xEF && buffer[1] === 0xBB && buffer[2] === 0xBF) {
-        content = buffer.toString('utf8').slice(1); // 移除 BOM
-        console.log(`   📝 检测到 UTF-8 BOM`);
-      }
-      // 默认 UTF-8
-      else {
-        content = buffer.toString('utf8');
-        console.log(`   📝 使用默认 UTF-8 编码`);
-      }
-      
-      console.log(`\n🔍 检查文件: ${path.relative(versionDir, htmlFile)}`);
-      console.log(`📄 文件内容: ${content.substring(0, 200)}...`);
-      
-      // 如果没有指定路径前缀，先自动检测
-      if (!pathPrefix) {
-        const autoDetectPatterns = [
-          // 检测 GitHub Pages 项目路径: /project-name/...
-          /(?:href|src)=["']\/([\w.-]+)\/([^"']+)["']/g,
-          // 检测 CSS 中的路径: url("/project-name/...")
-          /url\(["']?\/([\w.-]+)\/([^"')]+)["']?\)/g
-        ];
-        
-        autoDetectPatterns.forEach(pattern => {
-          const matches = [...content.matchAll(pattern)];
-          matches.forEach(match => {
-            detectedPrefixes.add(match[1]); // 项目名称
-          });
-        });
-      }
-      
-      let fileModified = false;
-      let filePathsFixed = 0;
-      
-      if (pathPrefix) {
-        // 使用手动指定的路径前缀
-        console.log(`🎯 使用指定的路径前缀: /${pathPrefix}/`);
-        // 使用字符串替换而不是复杂的正则表达式
-        const prefixPattern = `/${pathPrefix}/`;
-        console.log(`🔍 搜索模式: ${prefixPattern}`);
-        
-        if (content.includes(prefixPattern)) {
-          console.log(`   ✅ 找到路径前缀: ${prefixPattern}`);
-          
-          // 简单的字符串替换
-          const originalContent = content;
-          content = content.replace(new RegExp(`href=["']\\/${pathPrefix}\\/`, 'g'), 'href="./');
-          content = content.replace(new RegExp(`src=["']\\/${pathPrefix}\\/`, 'g'), 'src="./');
-          content = content.replace(new RegExp(`url\\(["']?\\/${pathPrefix}\\/`, 'g'), 'url("./');
-          
-          if (content !== originalContent) {
-            fileModified = true;
-            filePathsFixed++;
-          }
-        } else {
-          console.log(`   ❌ 未找到路径前缀: ${prefixPattern}`);
-        }
-      }
-      
-      // 处理自动检测的前缀
-      if (!pathPrefix && detectedPrefixes.size > 0) {
-        detectedPrefixes.forEach(prefix => {
-          const prefixPattern = `/${prefix}/`;
-          console.log(`🔍 自动检测前缀: ${prefixPattern}`);
-          
-          if (content.includes(prefixPattern)) {
-            console.log(`   ✅ 找到路径前缀: ${prefixPattern}`);
-            
-            const originalContent = content;
-            content = content.replace(new RegExp(`href=["']\\/${prefix}\\/`, 'g'), 'href="./');
-            content = content.replace(new RegExp(`src=["']\\/${prefix}\\/`, 'g'), 'src="./');
-            content = content.replace(new RegExp(`url\\(["']?\\/${prefix}\\/`, 'g'), 'url("./');
-            
-            if (content !== originalContent) {
-              fileModified = true;
-              filePathsFixed++;
-            }
-          }
-        });
-      }
-      
-      if (fileModified) {
-        fs.writeFileSync(htmlFile, content);
-        console.log(`   ✅ ${path.relative(versionDir, htmlFile)}: 修复了 ${filePathsFixed} 个路径`);
-        totalFilesFixed++;
-        totalPathsFixed += filePathsFixed;
-      } else {
-        console.log(`   ℹ️  ${path.relative(versionDir, htmlFile)}: 无需修复`);
-      }
-      
-    } catch (error) {
-      console.warn(`⚠️  处理 ${htmlFile} 时出错:`, error.message);
-    }
-  });
-  
-  if (totalPathsFixed > 0) {
-    console.log(`✅ 路径修复完成: ${totalFilesFixed} 个文件，${totalPathsFixed} 个路径`);
-  } else {
-    console.log(`ℹ️  所有文件路径都正常，无需修复`);
-  }
-}
-
-// 递归查找HTML文件
-function findHTMLFiles(dir) {
-  const files = [];
-  
-  try {
-    const items = fs.readdirSync(dir);
-    
-    items.forEach(item => {
-      const fullPath = path.join(dir, item);
-      const stat = fs.statSync(fullPath);
-      
-      if (stat.isDirectory()) {
-        files.push(...findHTMLFiles(fullPath));
-      } else if (path.extname(item).toLowerCase() === '.html') {
-        files.push(fullPath);
-      }
-    });
-  } catch (error) {
-    console.warn(`⚠️  读取目录 ${dir} 时出错:`, error.message);
-  }
-  
-  return files;
-}
+// URL 路径切换模式不需要路径修复函数
 
 module.exports = { archiveVersion };

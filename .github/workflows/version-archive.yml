@@ -17,7 +17,7 @@ on:
         description: '归档目录名称'
         required: false
         type: string
-        default: 'versions'
+        default: '.'
       force_archive:
         description: '强制归档（覆盖已存在版本）'
         required: false
@@ -28,11 +28,6 @@ on:
         required: false
         type: boolean
         default: true
-      path_prefix:
-        description: '绝对路径前缀，留空自动检测'
-        required: false
-        type: string
-        default: ''
     # GITHUB_TOKEN 是系统自动提供的，无需在此声明
 
 jobs:
@@ -190,10 +185,10 @@ jobs:
         echo "" >> README.md
         echo "此分支用于存储项目的历史版本。" >> README.md
         echo "" >> README.md
-        echo "- 归档目录: ${{ inputs.archive_dir }}" >> README.md
+        echo "- 归档目录: ." >> README.md
         echo "- 创建时间: $(date)" >> README.md
         
-        mkdir -p ${{ inputs.archive_dir }}
+        # 创建基础目录结构（版本将直接存储在根目录）
         
         # 提交并推送到远程
         git add .
@@ -216,22 +211,15 @@ jobs:
         echo "✅ 归档分支已存在，设置工作树"
         git worktree add archive ${{ inputs.archive_branch }} 2>/dev/null || true
         
-        # 确保归档目录存在
-        mkdir -p archive/${{ inputs.archive_dir }}
+        # 归档目录已存在（根目录）
         echo "📁 归档目录结构："
         ls -la archive/
 
     - name: 复制版本切换器资源
       run: |
-        # 确保归档目录存在
-        mkdir -p archive/${{ inputs.archive_dir }}
-        
-        # 复制版本切换器文件到归档根目录（主页面需要）
-        cp .version-archive-tools/src/version-switcher-iframe.js archive/
-        
-        # 也复制到版本目录（兼容性）
-        cp .version-archive-tools/src/version-switcher.js archive/${{ inputs.archive_dir }}/
-        cp .version-archive-tools/src/version-switcher.css archive/${{ inputs.archive_dir }}/
+        # 复制版本切换器文件到归档根目录
+        cp .version-archive-tools/src/version-switcher.js archive/
+        cp .version-archive-tools/src/version-switcher.css archive/
         
         echo "✅ 版本切换器资源已复制到归档目录"
 
@@ -259,16 +247,10 @@ jobs:
           --version=\"${{ steps.get_version.outputs.version }}\" \
           --clean-version=\"${{ steps.get_version.outputs.clean_version }}\" \
           --build-dir=\"$BUILD_PATH\" \
-          --archive-dir=\"../archive/${{ inputs.archive_dir }}\" \
+          --archive-dir=\"../archive\" \
           --force=\"${{ inputs.force_archive }}\""
         
-        # 如果指定了路径前缀，添加到命令中
-        if [ -n "${{ inputs.path_prefix }}" ]; then
-          ARCHIVE_CMD="$ARCHIVE_CMD --path-prefix=\"${{ inputs.path_prefix }}\""
-          echo "🎯 使用指定的路径前缀: ${{ inputs.path_prefix }}"
-        else
-          echo "🔍 将自动检测路径前缀"
-        fi
+        # URL 路径切换模式不需要路径前缀处理
         
         # 执行归档命令
         eval $ARCHIVE_CMD
@@ -277,7 +259,7 @@ jobs:
       run: |
         cd .version-archive-tools
         node scripts/update-version-index.js \
-          --archive-dir="../archive/${{ inputs.archive_dir }}" \
+          --archive-dir="../archive" \
           --version="${{ steps.get_version.outputs.version }}"
 
     - name: 提交归档更改
